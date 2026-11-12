@@ -1,0 +1,17 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CITATION.cff
+include pyproject.toml
+include COMMIT
+include VERSION
+include CODE_AVAILABILITY.md
+include DATA_AVAILABILITY.md
+include RELEASE_CHECKLIST.md
+recursive-include scatac_calib *.py py.typed
+recursive-include tests *.py *.sh *.txt
+recursive-include examples *.py *.sh *.md *.npz *.txt *.json *.bed
+recursive-include docs *.md
+global-exclude __pycache__ *.py[cod] *.egg-info
+prune build
+prune dist

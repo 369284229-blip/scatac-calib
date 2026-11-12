@@ -1,0 +1,37 @@
+# Clean-venv test log — scatac-calib v1.0.0 — 2026-11-12 (worker 050)
+#
+# Python : /tmp/calib_venv_050/bin/python (3.14.7, venv with --system-site-packages)
+# numpy 2.5.4; scipy 1.18.1; scikit-learn 1.9.1; setuptools 83.0.0
+# Install: python -m pip install --no-index --no-deps \
+#            dist/scatac_calib-1.0.0-py3-none-any.whl
+# Source : sdist extracted to /tmp/calib_sdist_050/scatac_calib-1.0.0
+# Command: python -m unittest discover -s tests -v
+#
+test_audit_writes_report_and_checklist (test_cli_smoke.TestAuditDemo.test_audit_writes_report_and_checklist) ... ok
+test_audit_matches_expected_point_estimates (test_real_fixture.TestAuditRealFixture.test_audit_matches_expected_point_estimates) ... ok
+test_delta_is_zero_on_both_axes (test_zero_model.TestDeltaWhenModelIsNull.test_delta_is_zero_on_both_axes) ... ok
+test_zero_model_auc_is_near_half (test_zero_model.TestNullModelAuc.test_zero_model_auc_is_near_half) ... ok
+test_zero_model_without_train_uses_test_marginals (test_zero_model.TestNullModelAuc.test_zero_model_without_train_uses_test_marginals) ... ok
+test_delta_ignores_nan_pairs (test_zero_model.TestSingleClassSkipped.test_delta_ignores_nan_pairs) ... ok
+test_per_peak_and_per_cell_skip_all_one (test_zero_model.TestSingleClassSkipped.test_per_peak_and_per_cell_skip_all_one) ... ok
+test_per_peak_and_per_cell_skip_all_zero (test_zero_model.TestSingleClassSkipped.test_per_peak_and_per_cell_skip_all_zero) ... ok
+test_safe_auc_returns_nan_for_single_class (test_zero_model.TestSingleClassSkipped.test_safe_auc_returns_nan_for_single_class) ... ok
+test_zero_model_skips_single_class (test_zero_model.TestSingleClassSkipped.test_zero_model_skips_single_class) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 4.678s
+
+OK
+
+# Real-data fixture through the installed console script:
+#   scatac-calib audit --matrix m_test_fixture.npz --preds preds_fixture.npz \
+#     --train-matrix m_train_fixture.npz --groups groups_fixture.txt \
+#     --out /tmp/fixture_out_venv --n-boot 1000 --depth-bins 5 --seed 20261112
+# exit 0; every one of the 30 numeric fields matched
+# examples/real_fixture/fixture_out/calib_report.json to <= 1e-12.
+#   per_peak_auc 0.7478242362161837
+#   per_cell_auc 0.6940874244675193
+#
+# Synthetic demo through the installed console script (--n-boot 200, 5 bins):
+#   per_peak 0.627657, per_cell 0.741267, null 0.505827 / 0.687821,
+#   oracle 0.646599 / 0.755013 — identical to examples/demo/expected.md.

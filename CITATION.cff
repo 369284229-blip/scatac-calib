@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use scatac-calib in a publication, please cite this software."
+type: software
+title: "scatac-calib: calibration-aware evaluation for scATAC-seq sequence models"
+version: 1.0.0
+date-released: "2026-11-12"
+license: MIT
+abstract: >-
+  A command-line framework that separates sequence-derived signal from
+  frequency- and depth-driven baseline performance in scATAC-seq
+  sequence-to-accessibility models. It reports frequency-null AUROC,
+  group-level oracle AUROC, delta AUROC with paired bootstrap confidence
+  intervals, depth-matched AUROC, and a minimum reporting checklist.
+keywords:
+  - scATAC-seq
+  - chromatin accessibility
+  - benchmark
+  - calibration
+  - AUROC
+authors:
+  - name: "Wheat scATAC Benchmark Team"
+    affiliation: "Henan Agricultural University, Zhengzhou, China"

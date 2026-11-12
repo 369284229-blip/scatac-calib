@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+# Generated at packaging time by `git rev-parse HEAD`
+COMMIT
+.DS_Store

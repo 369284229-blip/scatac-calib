@@ -1,0 +1,81 @@
+{
+  "dataset": "m_test_fixture.npz",
+  "preds": "preds_fixture.npz",
+  "n_peaks": 100,
+  "n_cells": 80,
+  "metrics": {
+    "per_peak_auc": 0.7478242362161837,
+    "n_valid_peaks": 73,
+    "per_cell_auc": 0.6940874244675193,
+    "n_valid_cells": 64
+  },
+  "ap": 0.07747587158056138,
+  "zero_model": {
+    "per_peak_auc": 0.6834153421349665,
+    "per_cell_auc": 0.8089406162485495,
+    "cell_freq_source": "train",
+    "note": "只用边际频率打分，不含序列信息；peak_freq 来自 test 峰检出率，cell_freq 来自 train 细胞检出率"
+  },
+  "delta_vs_zero": {
+    "peak": {
+      "model": 0.7478242362161837,
+      "baseline": 0.6834153421349665,
+      "delta": 0.0644088940812172,
+      "paired": {
+        "ci95": [
+          0.0284899904294284,
+          0.10065213776854223
+        ],
+        "p": 0.0,
+        "mean": 0.06396887576445234,
+        "n": 73,
+        "n_boot": 1000
+      }
+    },
+    "cell": {
+      "model": 0.6940874244675193,
+      "baseline": 0.8089406162485495,
+      "delta": -0.11485319178103026,
+      "paired": {
+        "ci95": [
+          -0.17026312105454144,
+          -0.060558766316891166
+        ],
+        "p": 0.0,
+        "mean": -0.11470921933719674,
+        "n": 64,
+        "n_boot": 1000
+      }
+    }
+  },
+  "ci95": {
+    "per_peak_auc": [
+      0.7031300167840783,
+      0.7896788718756313
+    ],
+    "per_cell_auc": [
+      0.6452653697716331,
+      0.7420894192319704
+    ]
+  },
+  "oracle": {
+    "kind": "group-level (cluster profile)",
+    "source": "test(label-informed)",
+    "n_groups": 14,
+    "missing_cells": 0,
+    "per_peak_auc": 0.9348451780725647,
+    "per_cell_auc": 0.9550075335537698,
+    "note": "已知细胞所属群时的上限；不代表模型可达到"
+  },
+  "depth_matched": {
+    "per_peak_auc": 0.6235446510334903,
+    "n_bins": 5,
+    "per_bin_auc": [
+      0.5834706959706961,
+      0.5937859759288331,
+      0.6288095238095238,
+      0.6881124084249084
+    ],
+    "cell_depth_median": 2.0
+  }
+}
