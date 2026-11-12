@@ -15,7 +15,7 @@
 | Commit | tag `v1.0.0` target; the exact hash is in the shipped **`COMMIT`** file (`git rev-parse HEAD` at packaging time) and can be recovered with `git rev-parse v1.0.0` |
 | License | **MIT** (`LICENSE`; SPDX `MIT`) |
 | Copyright holder | `Wheat scATAC Benchmark Team` (placeholder — real holder `{TBD}`) |
-| Public repository URL | **`{TBD}`** (user must decide public/private and host) |
+| Public repository URL | **`https://github.com/369284229-blip/scatac-calib`** (public, tag `v1.0.0`) |
 | Archived DOI (Zenodo) | **`{TBD}`** |
 | Author list / affiliation | `{TBD}` (`CITATION.cff` currently uses the team placeholder) |
 | Contact | `{TBD}` |
@@ -80,11 +80,11 @@ Expected numbers and tolerances: `examples/demo/expected.md` and
 
 > The `scatac-calib` toolkit (v1.0.0, tag `v1.0.0`, commit hash in the
 > accompanying `COMMIT` file) is released under the MIT licence at
-> `{REPOSITORY_URL}` and archived at Zenodo under DOI `{ZENODO_DOI}`.  Installation, the synthetic demo, the real-data
+> `https://github.com/369284229-blip/scatac-calib` and archived at Zenodo under DOI `{ZENODO_DOI}`.  Installation, the synthetic demo, the real-data
 > fixture, tests and the mapping from the reporting checklist to CLI commands
 > are included in the archive.
 
-Do **not** paste this into the manuscript until the URL and DOI exist.
+Do **not** paste this into the manuscript until the DOI exists.
 `写作/Methods_draft.md §6.10` currently says “v0.1” and `{TBD}` for the commit;
 that is a manuscript-side fix and is out of scope for this work order.
 

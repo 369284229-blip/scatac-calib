@@ -13,8 +13,8 @@ Nothing in this file has been faked: every `{TBD}` is still a placeholder.
 
 | # | Decision | Where it is used | Suggested default |
 |---|---|---|---|
-| 1 | **Public or private repository?** | `CODE_AVAILABILITY.md`, manuscript Code Availability | Public (reviewers must be able to run it) |
-| 2 | **Host and repository URL** | `{REPOSITORY_URL}` in `CODE_AVAILABILITY.md` | GitHub, e.g. `https://github.com/<org>/scatac-calib` |
+| 1 | **Public or private repository?** | `CODE_AVAILABILITY.md`, manuscript Code Availability | Public (reviewers must be able to run it) — **done: public** |
+| 2 | **Host and repository URL** | `{REPOSITORY_URL}` in `CODE_AVAILABILITY.md` | GitHub, e.g. `https://github.com/<org>/scatac-calib` — **done: `https://github.com/369284229-blip/scatac-calib`** |
 | 3 | **Zenodo DOI** (or other archive) | `{ZENODO_DOI}` in both availability docs | Enable the GitHub–Zenodo integration, then create a release for `v1.0.0`; the DOI is minted automatically |
 | 4 | **Author list and affiliations** | `CITATION.cff`, `pyproject.toml` authors, LICENSE copyright | Replace “Wheat scATAC Benchmark Team” with the real authors |
 | 5 | **License holder / copyright line** | `LICENSE` | Institution or the corresponding author; MIT is already chosen |
@@ -23,6 +23,10 @@ Nothing in this file has been faked: every `{TBD}` is still a placeholder.
 | 8 | **Whether derived matrices can be redistributed** | `DATA_AVAILABILITY.md` §4 | Check the GSA/GEO terms before uploading |
 
 ## 2. Commands you run once the URL/DOI exist
+
+> **Repository creation and push: done 2026-11-12** (`main` and `v1.0.0` pushed
+> to `git@github.com:369284229-blip/scatac-calib.git`).  The remaining steps
+> (Zenodo DOI, author metadata) are still pending.
 
 From `代码/scatac_calib/`:
 
