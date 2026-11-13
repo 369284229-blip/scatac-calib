@@ -1,4 +1,4 @@
-# Release checklist — scatac-calib v1.0.0
+# Release checklist — scatac-calib
 
 Prepared by worker 050 on 2026-11-12.  Everything that can be done without the
 authors' decisions is done: the repository is initialised, the release commit is
@@ -8,6 +8,11 @@ rebuilt.  The items below need **you** (the authors), because they involve
 identity, hosting and permanent identifiers.
 
 Nothing in this file has been faked: every `{TBD}` is still a placeholder.
+
+> **v1.1.0 (worker 068, stage-2 P0-3)** adds `--null inductive` and input
+> hard validation.  The v1.1.0 wheel/sdist are built but **not pushed/tagged**;
+> after acceptance the commander must commit, regenerate `COMMIT`, tag
+> `v1.1.0`, and re-run the checks below with `1.1.0` in place of `1.0.0`.
 
 ## 1. Decisions only the authors can make
 
@@ -62,7 +67,7 @@ institutional archive, and state the access condition in the manuscript.
 ## 3. Pre-release verification (already run by worker 050; re-run after edits)
 
 ```bash
-# Tests (9 tests, no pytest needed)
+# Tests (no pytest needed)
 python -m unittest discover -s tests -v
 
 # Synthetic demo
@@ -81,8 +86,9 @@ Update `dist/SHA256SUMS` (or the table in `回执_050.md`) if you rebuild.
 ## 4. Content checks before pushing
 
 - [ ] `COMMIT` contains the output of `git rev-parse HEAD` for the tagged commit.
-- [ ] `VERSION` = `1.0.0`; `scatac_calib.__version__` = `1.0.0`;
-      `pyproject.toml` version = `1.0.0`; tag `v1.0.0` exists.
+- [ ] `VERSION` = `1.1.0`; `scatac_calib.__version__` = `1.1.0`;
+      `pyproject.toml` version = `1.1.0`; tag `v1.1.0` created by the commander
+      after acceptance (worker 068 did not push/tag).
 - [ ] `CODE_AVAILABILITY.md` and `DATA_AVAILABILITY.md` have no remaining `{TBD}`
       **except** the ones you deliberately leave for the manuscript.
 - [ ] No secrets, credentials, `.env`, SSH keys, or absolute personal paths in
@@ -92,7 +98,7 @@ Update `dist/SHA256SUMS` (or the table in `回执_050.md`) if you rebuild.
       lists 100 peak indices and 80 cell indices and their SHA256.
 - [ ] The synthetic demo is still present (`examples/demo/`), not replaced by the
       fixture.
-- [ ] `dist/scatac_calib-1.0.0.tar.gz` and `.whl` contain the new files
+- [ ] `dist/scatac_calib-1.1.0.tar.gz` and `.whl` contain the new files
       (`CODE_AVAILABILITY.md`, `DATA_AVAILABILITY.md`, `RELEASE_CHECKLIST.md`,
       `COMMIT`, `VERSION`, `docs/table3_executable.md`,
       `examples/real_fixture/*`).

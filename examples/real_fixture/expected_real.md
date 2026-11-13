@@ -1,4 +1,4 @@
-# Real-data fixture — expected output (v1.0.0)
+# Real-data fixture — expected output (v1.0.0 / v1.1.0)
 
 This directory is a **real-data fixture**, not the synthetic demo.  It is a
 fixed-index subset of the wheat `dataset_v3` test split, taken read-only from
@@ -86,6 +86,24 @@ Other fields:
 - `depth_matched.per_bin_auc` =
   [0.583471, 0.593786, 0.628810, 0.688112]
 - `depth_matched.cell_depth_median` = 2.0
+
+## Inductive null on this fixture (v1.1.0)
+
+`audit --null inductive` on the same inputs gives the fixture-scale values below.
+They validate the 5-fold cell cross-fitting implementation, **not** the paper's
+full-scale numbers (the 100-peak subset has a different null; see the note at the
+bottom):
+
+| Quantity | Value |
+|---|---|
+| `inductive_null.per_cell_auc` (5 folds × 16 cells, fold_seed 20261112) | **0.667630** |
+| `inductive_null.n_valid_cells` | 64 |
+| `delta_vs_inductive_null.cell.model` | 0.694087 |
+| `delta_vs_inductive_null.cell.delta` | **+0.026458** |
+
+Full-scale (4,665 × 8,661) reference: null **0.6852978**, Δcell 3-seed mean
+**+0.0193566**; reproduce with `examples/full_reproduction/reproduce_inductive.py`
+(full matrices/predictions are not shipped).
 
 ## Tolerance
 

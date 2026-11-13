@@ -9,6 +9,7 @@
 """
 
 import numpy as np
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from .metrics import safe_auc
 
@@ -51,6 +52,93 @@ def zero_auc_arrays(labels, peak_freq, cell_freq):
     for j in range(labels.shape[1]):
         z_cell[j] = safe_auc(labels[:, j], peak_freq)
     return z_peak, z_cell
+
+
+def make_cell_folds(n_cells, groups=None, n_folds=5, seed=20261112):
+    """构造 cell cross-fitting 的折。
+
+    ``groups`` 给定时按群分层（与工单 047 的
+    ``StratifiedKFold(5, shuffle=True, random_state=20261112)`` 一致）；
+    否则退化为不分层 KFold，并在 ``method`` 里注明。
+
+    返回 ``(fold_ids, meta)``：``fold_ids[k]`` 是第 k 折的细胞列索引。
+    """
+    if n_folds < 2:
+        raise ValueError("n_folds must be >= 2")
+    folds = min(int(n_folds), int(n_cells))
+    if folds < 2:
+        raise ValueError(
+            f"cell cross-fitting needs at least 2 cells, got {n_cells}"
+        )
+    if groups is not None:
+        groups = np.asarray(groups)
+        if len(groups) != n_cells:
+            raise ValueError(
+                f"groups has {len(groups)} entries but matrix has {n_cells} cells"
+            )
+        splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
+        fold_ids = [te for _, te in splitter.split(np.zeros(n_cells), groups)]
+        method = "stratified-by-groups"
+        unique = np.unique(groups)
+        absent = {
+            str(g): [k for k, idx in enumerate(fold_ids)
+                     if g not in set(groups[idx].tolist())]
+            for g in unique
+        }
+        groups_missing = {g: ks for g, ks in absent.items() if ks}
+    else:
+        splitter = KFold(n_splits=folds, shuffle=True, random_state=seed)
+        fold_ids = [te for _, te in splitter.split(np.zeros(n_cells))]
+        method = "kfold-unstratified"
+        groups_missing = {}
+    meta = {
+        "n_folds": folds,
+        "fold_seed": int(seed),
+        "method": method,
+        "stratified_by_groups": groups is not None,
+        "groups_missing_some_fold": groups_missing,
+        "fold_sizes": [int(len(idx)) for idx in fold_ids],
+    }
+    return fold_ids, meta
+
+
+def inductive_null_auc(labels, fold_ids):
+    """逐细胞 inductive null：每折用其余折的峰检出频率给本折细胞打分。
+
+    被评测细胞的标签不进入自己的 null 分数。返回 ``(null_auc, per_fold)``；
+    ``null_auc[j]`` 是细胞 j 的 null AUC（单类细胞为 NaN）。
+    """
+    n_cells = labels.shape[1]
+    null_auc = np.full(n_cells, np.nan, dtype=np.float64)
+    per_fold = []
+    for k, test_idx in enumerate(fold_ids):
+        train_mask = np.ones(n_cells, dtype=bool)
+        train_mask[test_idx] = False
+        peak_freq = np.asarray(labels[:, train_mask].mean(axis=1)).ravel()
+        peak_freq = peak_freq.astype(np.float64)
+        for j in test_idx:
+            null_auc[j] = safe_auc(labels[:, j], peak_freq)
+        block = null_auc[test_idx]
+        per_fold.append({
+            "fold": int(k),
+            "n_cells": int(len(test_idx)),
+            "n_valid_cells": int(np.sum(~np.isnan(block))),
+            "null_cell_auc": float(np.nanmean(block)),
+        })
+    return null_auc, per_fold
+
+
+def weighted_fold_mean(values, fold_ids):
+    """按折内有效细胞数加权汇总（与工单 047 的 ``weighted_mean`` 一致）。"""
+    values = np.asarray(values, dtype=np.float64)
+    total = 0.0
+    n = 0
+    for idx in fold_ids:
+        v = values[idx]
+        v = v[~np.isnan(v)]
+        total += float(v.sum())
+        n += len(v)
+    return (total / n if n else float("nan")), n
 
 
 def group_profiles(train_matrix, train_groups, n_peaks):

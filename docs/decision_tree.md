@@ -14,7 +14,7 @@
 | 主指标 | 必须报告 | 原因 |
 |---|---|---|
 | **逐峰 AUC** | 零模型、ΔAUROC、**深度分层 AUC** | 深细胞更容易被判对；不分层会虚高 |
-| **逐细胞 AUC** | 零模型、ΔAUROC、**群级 oracle** | 峰频率可白送大部分 AUC；oracle 给出“知道细胞类型”的上限 |
+| **逐细胞 AUC** | 零模型（**inductive** 优先）、ΔAUROC、**群级 oracle** | 峰频率可白送大部分 AUC；oracle 给出“知道细胞类型”的上限 |
 | 两者都报 | 上面全部 + AP | 审稿人一定会问另一个轴 |
 
 ## Q3. 你的峰集是否用到了注释/差异分析来选峰？
@@ -50,7 +50,15 @@
 ## 工具
 
 ```bash
+# frequency null（逐细胞轴 transductive，作对照）
 python -m scatac_calib audit --matrix ... --preds ... --train-matrix ... --groups ...
+
+# inductive null（5-fold cell cross-fitting，逐细胞主口径）
+python -m scatac_calib audit --matrix ... --preds ... --train-matrix ... --groups ... \
+  --null inductive
 ```
+
+> 逐细胞 Δ 主口径用 `--null inductive`：折内细胞的 null 分数只由其余折细胞估计，
+> 避免“null 已经知道 test labels”的循环论证。frequency 口径保留作对照。
 
 输出 `calib_report.json` + `reporting_checklist.md`，直接对应上面 1–8 项。

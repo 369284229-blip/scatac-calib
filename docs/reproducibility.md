@@ -1,6 +1,6 @@
 # 从原始矩阵到 Table 2 的最短路径
 
-本文给出用 `scatac-calib` v1.0.0 复现论文 **Table 2**（主指标 / 零模型 /
+本文给出用 `scatac-calib` v1.1.0 复现论文 **Table 2**（主指标 / 零模型 /
 oracle / Δ 与 CI）与 **Table 3** 清单项的最小步骤。所有命令只读取已有
 矩阵和预测，不训练、不重抽峰集。
 
@@ -43,6 +43,18 @@ for s in 0 1 2; do
 done
 ```
 
+逐细胞主口径加 `--null inductive`（v1.1）：
+
+```bash
+scatac-calib audit \
+  --matrix m_test.npz --preds preds.npz \
+  --train-matrix m_train.npz --groups cell_groups.txt \
+  --null inductive --out out/seed0_inductive --n-boot 1000
+```
+
+全量口径的 null 与 Δcell 见 `examples/full_reproduction/reproduce_inductive.py`
+（null 0.6852978，3-seed 均值 Δcell +0.0193566）。
+
 每个 `seed${s}/` 产出：
 
 - `calib_report.json` —— 下表所有字段
@@ -61,6 +73,8 @@ done
 | 零模型来源（train / test） | `zero_model.cell_freq_source` |
 | Δ逐峰 / Δ逐细胞 + CI + p | `delta_vs_zero.peak.delta` / `.paired.ci95` / `.paired.p`；cell 同构 |
 | 均值 CI（非 Δ） | `ci95.per_peak_auc` / `ci95.per_cell_auc` |
+| inductive null（逐细胞） | `inductive_null.per_cell_auc`、`.per_fold`、`.fold_sizes` |
+| Δ逐细胞（inductive 主口径） | `delta_vs_inductive_null.cell.delta` / `.paired.ci95` / `.paired.p` |
 | oracle 逐峰 / 逐细胞 | `oracle.per_peak_auc` / `oracle.per_cell_auc` |
 | oracle 泄漏口径 | `oracle.source`（`train` = 无泄漏；`test(label-informed)` = 上界） |
 | 深度分层逐峰 | `depth_matched.per_peak_auc`、`.per_bin_auc`、`.n_bins` |
@@ -90,7 +104,7 @@ for axis in ("peak", "cell"):
    传入的 `preds.npz` 必须与你要报告的行一致。
 2. **同 split**：零模型、oracle、Δ 必须和主指标用同一个 `m_test.npz` 与同一个
    `cell_groups.txt`；不要为不同行重抽测试集。
-3. **零模型来源**：峰集 split 时 `cell_freq_source` 必须是 `"train"`。
+3. **零模型来源**：峰集 split 时 frequency 的 `cell_freq_source` 必须是 `"train"`。
    若显示 `"test"`，说明没传 `--train-matrix` 或细胞数不匹配，数字不可比。
 4. **oracle 泄漏**：`oracle.source == "train"` 才是可训练意义上的上界；
    若为 `"test(label-informed)"`，论文中必须注明。

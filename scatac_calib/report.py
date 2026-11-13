@@ -5,6 +5,7 @@ from pathlib import Path
 
 CHECKLIST = [
     ("zero_model", "零模型 AUROC（逐峰/逐细胞）", "zero"),
+    ("inductive_null", "inductive null（5-fold cell cross-fitting）", "inductive_null"),
     ("delta_vs_zero", "ΔAUROC 与配对 bootstrap CI/p", "delta"),
     ("oracle", "群级 oracle（逐峰/逐细胞）", "oracle"),
     ("depth_matched", "深度分层后的逐峰 AUROC", "depth"),
@@ -43,7 +44,9 @@ def _has(result, flag):
     if flag == "zero":
         return "zero_model" in result
     if flag == "delta":
-        return "delta_vs_zero" in result
+        return "delta_vs_zero" in result or "delta_vs_inductive_null" in result
+    if flag == "inductive_null":
+        return "inductive_null" in result
     if flag == "oracle":
         return "oracle" in result
     if flag == "depth":

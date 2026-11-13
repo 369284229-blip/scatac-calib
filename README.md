@@ -1,11 +1,12 @@
-# scatac-calib v1.0.0
+# scatac-calib v1.1.0
 
 scATAC-seq **序列模型校准评测** 的命令行工具。回答一个问题：
 
 > 模型报出的 AUROC，有多少是数据本身的白送（峰频率、细胞深度），有多少是序列信号？
 
-一条命令给出：零模型、群级 oracle、ΔAUROC + 配对 bootstrap CI、深度分层 AUC，
-以及一份最低报告清单。算法行为自 v0.1 起未改变；v1.0 只是可安装包 + 测试 + demo + 文档。
+一条命令给出：零模型（frequency 或 inductive）、群级 oracle、ΔAUROC + 配对
+bootstrap CI、深度分层 AUC，以及一份最低报告清单。算法行为自 v0.1 起未改变；
+v1.0 是可安装包，v1.1 增加 inductive null（5-fold cell cross-fitting）与输入硬校验。
 
 - Python ≥ 3.9，依赖 `numpy` / `scipy` / `scikit-learn`
 - 五个子命令：`audit` / `zero-model` / `oracle` / `delta` / `depth`
@@ -24,7 +25,7 @@ scatac-calib --help
 从 wheel：
 
 ```bash
-python -m pip install dist/scatac_calib-1.0.0-py3-none-any.whl
+python -m pip install dist/scatac_calib-1.1.0-py3-none-any.whl
 scatac-calib --help
 ```
 
@@ -41,11 +42,15 @@ python -m scatac_calib --help
 
 | 参数 | 说明 |
 |---|---|
-| `--matrix` | test 标签矩阵，**峰 × 细胞**；`.npz`（CSR 四件套 `data`/`indices`/`indptr`/`shape`）或 `.h5ad` |
-| `--preds` | 模型预测，与 `--matrix` 同形状；`.npz`（默认键 `preds`）或 `.npy` |
+| `--matrix` | test 标签矩阵，默认**峰 × 细胞**；`.npz`（CSR 四件套 `data`/`indices`/`indptr`/`shape`）或 `.h5ad` |
+| `--preds` | 模型预测，与 `--matrix` 同形状；`.npz`（默认键 `preds`）或 `.npy`。**`zero-model` / `oracle` 可省略**，`audit` / `delta` / `depth` 必填 |
 | `--preds-key` | `.npz` 中的预测键名，默认 `preds` |
-| `--train-matrix` | 训练矩阵（峰 × 细胞），用于零模型的细胞检出率；峰集与 test 不同也可以 |
-| `--groups` | test 细胞分组，`barcode<TAB>cluster`，每行一条；用于群级 oracle |
+| `--train-matrix` | 训练矩阵（峰 × 细胞），用于零模型的细胞检出率；峰集与 test 不同也可以。**`--null frequency` 下必填，缺失直接退出码 2** |
+| `--matrix-orientation` | `auto`（默认）/ `peaks-x-cells` / `cells-x-peaks`。`.npz` 的 `auto` 按峰 × 细胞读；`.h5ad` 按 AnnData 约定检查 obs/var 名字后决定是否转置 |
+| `--null` | `frequency`（默认，频率零模型）或 `inductive`（5-fold cell cross-fitting） |
+| `--n-folds` | inductive null 的折数，默认 5 |
+| `--fold-seed` | inductive null 的折划分种子，默认 20261112 |
+| `--groups` | test 细胞分组，`barcode<TAB>cluster`，每行一条；用于群级 oracle 与 inductive 分层折 |
 | `--train-groups` | 训练细胞分组；缺省时复用 `--groups` |
 | `--out` | 输出目录 |
 | `--n-boot` | bootstrap 次数，默认 1000 |
@@ -97,6 +102,31 @@ scatac-calib delta     --matrix m_test.npz --preds preds.npz \
 scatac-calib depth     --matrix m_test.npz --preds preds.npz \
   --out out/depth --depth-bins 10
 ```
+
+### inductive null（5-fold cell cross-fitting）
+
+频率零模型的逐细胞轴用 **test 矩阵自己的峰检出率** 打分，被评测细胞的标签也参与
+了频率估计（transductive）。`--null inductive` 改为：把细胞按 `--groups` 分层
+分成 5 折（`StratifiedKFold(5, shuffle=True, random_state=20261112)`），折 *k* 中
+每个细胞的 null 分数只用 **其余 4 折** 细胞的峰检出频率；被评测细胞的标签不进入
+自己的 null 分数。逐峰轴不变（仍用 train 的细胞检出率，对 test 峰已是 inductive）。
+
+```bash
+scatac-calib audit \
+  --matrix m_test.npz --preds preds.npz \
+  --train-matrix m_train.npz --groups cell_groups.txt \
+  --null inductive --out out/inductive --n-boot 1000
+```
+
+新增输出字段：
+
+- `null` = `"inductive"`
+- `inductive_null.per_cell_auc`、`.per_fold`、`.fold_sizes`、`.fold_method`
+- `delta_vs_inductive_null.cell.{model,baseline,delta,paired}`（折内细胞 bootstrap）
+
+`zero-model --null inductive` 可以不传 `--preds` 与 `--train-matrix`：它只输出
+null 本身（逐峰轴的 `cell_freq_source` 会标为 `test(label-informed)`）。
+`audit` 为了同时报告 frequency 参考口径，仍要求 `--train-matrix`。
 
 ## Demo（一条命令）
 
@@ -152,6 +182,24 @@ cd examples/real_fixture
 该 fixture 的训练峰与 test 峰按染色体不相交，因此 oracle 显示
 `test(label-informed)`（上界，不是可训练结果）；这与全量 v3 的口径一致。
 
+### 全量 inductive null 复现（数据不进包）
+
+100 × 80 子集只验证方法，**不能复现全量数字**（inductive null 对细胞数/峰数敏感：
+子集 0.6676，全量 0.6853）。全量 test split 与三个 seed 的预测约 430 MB，因此
+不放进 wheel/sdist；用随包的只读脚本在项目数据上复现工单 047：
+
+```bash
+python examples/full_reproduction/reproduce_inductive.py \
+  --data-dir /path/to/dataset_v3 \
+  --preds /path/to/bootstrap/seed0/preds.npz \
+          /path/to/bootstrap/seed1/preds.npz \
+          /path/to/bootstrap/seed2/preds.npz
+```
+
+期望（容差 1e-3）：null **0.6852978**、3-seed 均值 Δcell **+0.0193566**；
+逐 seed Δ = +0.0178785 / +0.0212185 / +0.0189728。脚本退出码 0 = 通过。
+详见 [`examples/full_reproduction/README.md`](examples/full_reproduction/README.md)。
+
 ## 测试（不依赖 pytest）
 
 ```bash
@@ -169,7 +217,13 @@ python -m unittest discover -s tests -v
 - `tests/test_cli_smoke.py`：在 demo 数据上端到端跑 `audit`，检查 JSON/清单字段。
 - `tests/test_real_fixture.py`：在 `examples/real_fixture/` 的真实数据子集上端到端
   跑 `audit`，点估计与 `expected_real.md` 的容差为 1e-6（`--n-boot 50` 只影响 CI，
-  不影响点估计）。共 10 个测试。
+  不影响点估计）。
+- `tests/test_inductive_null.py`：折划分（分层/非分层）、折内标签不进入本折 null
+  分数、加权汇总，以及在真实数据子集上 `audit --null inductive` 的点估计回归
+  （0.6676299 / Δ +0.0264575）。
+- `tests/test_input_validation.py`：frequency null 缺 `--train-matrix` 硬错误、
+  训练矩阵细胞数不匹配、`--preds` 对 zero/oracle 可省略、`.h5ad` 方向推断与
+  `--matrix-orientation` 覆盖、shape mismatch 提示。
 
 干净 venv 验证命令：
 
@@ -198,7 +252,8 @@ python -m venv --system-site-packages /tmp/calib_venv
 |---|---|
 | 逐峰 AUC | 对每个峰，用模型分数给细胞排序，算跨细胞 AUROC；对峰取平均 |
 | 逐细胞 AUC | 对每个细胞，用模型分数给峰排序，算跨峰 AUROC；对细胞取平均 |
-| 零模型 | 逐峰轴用**细胞检出率**打分；逐细胞轴用**峰检出率**打分 |
+| 零模型（frequency） | 逐峰轴用**细胞检出率**打分；逐细胞轴用**峰检出率**打分（transductive） |
+| 零模型（inductive） | 逐细胞轴的峰检出率只用**其余 4 折**细胞估计；逐峰轴同 frequency |
 | 群级 oracle | 用每个细胞所属群的峰均值打分（`source=train` 无泄漏；峰集不同时退化 `test(label-informed)`，须在文中注明） |
 | 深度分层 AUC | 按细胞深度分位分箱，箱内算逐峰 AUC 再平均 |
 | 配对检验 | `--n-boot` 次配对 bootstrap，双侧 p |
@@ -218,6 +273,20 @@ python -m venv --system-site-packages /tmp/calib_venv
 - 零模型（同 split / 同峰集）：逐峰 **0.69581**、逐细胞 **0.68781**（三 seed 相同）。
 - 群级 oracle（14 群，test label-informed）：逐峰 **0.71256**、逐细胞 **0.77713**。
 - 深度 10 箱保留率（相对 0.5 的增益）：71.10% / 71.75% / 71.01%（均值 71.29%）。
+
+### v1.1 inductive null 回归（工单 047）
+
+在同一全量 test split（4,665 × 8,661）上，`--null inductive`
+（`StratifiedKFold(5, shuffle=True, random_state=20261112)`）：
+
+| 量 | 值 |
+|---|---|
+| null（逐细胞，5 折加权） | **0.6852978**；每折 0.6861483 / 0.6862731 / 0.6846475 / 0.6846951 / 0.6847247 |
+| Δcell seed 0 | **+0.0178785**，CI [0.0165907, 0.0191525]（与 047 逐位一致） |
+| Δcell seed 1 / 2 | +0.0212185 / +0.0189728 |
+| Δcell 3-seed 均值 | **+0.0193566** |
+
+复现：`examples/full_reproduction/reproduce_inductive.py`（全量数据不入包）。
 - **回归判据**：Δ 点估计差 ≤ 1e-4、CI 端点差 ≤ 0.001。实测 3 seeds × 2 轴的 Δ 点估计差
   **全部为 0**；CI 端点最大差 **1.51e-4**（seed0 Δpeak 上端）→ **通过**，无算法漂移。
 - 与 `bootstrap_summary.json` 的差异仅来自 bootstrap RNG 流（不同脚本），点估计逐位一致。

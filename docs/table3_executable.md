@@ -1,7 +1,7 @@
-# Table 3 → 可执行映射（scatac-calib v1.0.0）
+# Table 3 → 可执行映射（scatac-calib v1.1.0）
 
 本文把论文 **Table 3（Minimum reporting checklist，15 行）** 逐项映射到
-v1.0.0 的命令、输入、输出字段，并标明哪些项由 CLI 自动产出、哪些需要外部脚本。
+v1.1.0 的命令、输入、输出字段，并标明哪些项由 CLI 自动产出、哪些需要外部脚本。
 同时给出 **Fig 1D / Fig 6 / README 中“items 1–8”** 与 Table 3 实际 15 行的编号映射。
 
 > 只读文档：本文件不改论文正文/图/表，只说明“论文的一项要求，用什么命令能算出来”。
@@ -42,18 +42,19 @@ v1.0.0 的命令、输入、输出字段，并标明哪些项由 CLI 自动产�
 
 ## 1. 逐行可执行映射（15 行）
 
-状态图例：**auto** = v1.0 直接输出该数字；**partial** = 部分由 CLI 产出/需人工补；
+状态图例：**auto** = v1.1 直接输出该数字；**partial** = 部分由 CLI 产出/需人工补；
 **external** = v1.0 不产出，需外部脚本或静态元数据。
 
 ### 1. Same-split frequency null — **auto**
 
 | | |
 |---|---|
-| 命令 | `scatac-calib zero-model --matrix m_test.npz --preds preds.npz --train-matrix m_train.npz --out out/zero`（或 `audit`） |
+| 命令 | `scatac-calib zero-model --matrix m_test.npz --train-matrix m_train.npz --out out/zero`（`--preds` 可省略；频率口径下 `--train-matrix` 必填） |
 | 输入 | test 标签矩阵、train 矩阵（提供 `cell_freq`；train/test 峰集可不同） |
 | 输出 | `zero_model.per_peak_auc`、`zero_model.per_cell_auc`、`zero_model.cell_freq_source` |
-| 判定 | `cell_freq_source` 必须是 `"train"`；若为 `"test"` 说明没传 `--train-matrix` 或细胞数不匹配，口径不可比 |
+| 判定 | `cell_freq_source` 必须是 `"train"`；若为 `"test(label-informed)"` 说明用的是 inductive 模式的退化口径或细胞数不匹配，不可与 frequency 口径混比。frequency 缺 `--train-matrix` 现在**硬错误退出**（v1.1），不再静默退化 |
 | 备注 | 逐峰轴用 train 的细胞检出率打分；逐细胞轴用 test 的峰检出率打分。后者是 transductive 的（046 P0-2 / 工单 047 处理），引用时须注明 |
+| inductive | `scatac-calib zero-model --matrix m_test.npz --groups cell_groups.txt --null inductive --out out/ind` 只凭标签就能算逐细胞 inductive null（5-fold cell cross-fitting）；与 `--preds` 无关 |
 
 ### 2. ΔAUROC, per-peak — **auto**
 
@@ -67,9 +68,10 @@ v1.0.0 的命令、输入、输出字段，并标明哪些项由 CLI 自动产�
 
 | | |
 |---|---|
-| 命令 | 同第 2 行（一次 `delta` 同时输出两轴） |
-| 输出 | `delta_vs_zero.cell.delta`、`.paired.ci95`、`.paired.p` |
+| 命令 | 同第 2 行，加 `--null inductive`（一次 `delta` 同时输出两轴与 inductive 块） |
+| 输出 | frequency 参考：`delta_vs_zero.cell.delta`、`.paired.ci95`、`.paired.p`；inductive 主口径：`delta_vs_inductive_null.cell.{model,baseline,delta,paired.ci95,paired.p}`，null 本身在 `inductive_null.per_cell_auc` |
 | 判定 | Table 3 的 `[op-default]`：Δ < 0.03 → 模型主要在复述峰频率；这是**经验判读阈值**，不是显著性门槛 |
+| 全量参考 | 4,665 × 8,661：null 0.6852978；Δcell（peak-selected 3-seed 均值）+0.0193566（复现脚本 `examples/full_reproduction/`） |
 
 ### 4. Group-level oracle — **auto**（需要 `--groups`）
 
@@ -195,6 +197,9 @@ scatac-calib audit \
   --out          calib_formal/seed0 \
   --n-boot 1000 --depth-bins 10 --seed 20261112
 ```
+
+加 `--null inductive` 即同一命令输出 inductive null 与 `delta_vs_inductive_null`；
+主口径（v1.1 起）为 inductive，`delta_vs_zero` 保留为 transductive 对照。
 
 已保存的参考输出：`p1_benchmark/calib_formal/seed{0,1,2}/calib_report.json`。
 seed0 关键值：逐峰 0.764036、逐细胞 0.703176、AP 0.087008、零模型

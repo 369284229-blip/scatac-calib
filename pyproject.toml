@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scatac-calib"
-version = "1.0.0"
+version = "1.1.0"
 description = "Calibration-aware evaluation for scATAC-seq sequence-to-accessibility models"
 readme = "README.md"
 requires-python = ">=3.9"
